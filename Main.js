@@ -1,34 +1,47 @@
 const fs = require('fs');
+const path = require('path');
+const yargs = require('yargs');
 
-// Отримання шляхів до файлів з аргументів командного рядка
-const inputFilePath = process.argv[3];
-const outputFilePath = process.argv[5];
+// Параметри командного рядка
+const argv = yargs
+  .option('input', {
+    alias: 'i',
+    description: 'Шлях до вхідного JSON файлу',
+    type: 'string',
+    demandOption: true
+  })
+  .option('display', {
+    alias: 'd',
+    description: 'Вивести дані на екран',
+    type: 'boolean',
+    default: false
+  })
+  .argv;
 
-// Перевірка наявності параметра --display
-const shouldDisplay = process.argv.includes("--display");
+// Шлях до файлу
+const inputFilePath = argv.input;
+const displayData = argv.display;
 
-// Зчитування вмісту файлу
-const data = fs.readFileSync(inputFilePath, 'utf-8');
+// Читання файлу
+fs.readFile(inputFilePath, 'utf8', (err, data) => {
+  if (err) {
+    console.error("Помилка при читанні файлу:", err);
+    return;
+  }
 
-if (!data) {
-    console.log("Файл порожній або не вдалося зчитати вміст.");
-    process.exit(1);
-}
-
-try {
-    // Парсинг JSON
+  try {
     const jsonData = JSON.parse(data);
-
-    // Вивід вмісту, якщо є параметр --display
-    if (shouldDisplay) {
-        console.log("Вміст файлу:", JSON.stringify(jsonData, null, 2));
+    
+    // Якщо параметр --display вказано, вивести дані
+    if (displayData) {
+      console.log("Дані з файлу:");
+      console.log(JSON.stringify(jsonData, null, 2)); // Виводимо красиво форматований JSON
     }
+    
+    // Тут можна додати додаткову логіку для обробки даних
+    // Наприклад, агрегація або фільтрація за категоріями
 
-    // Запис вмісту у вихідний файл
-    fs.writeFileSync(outputFilePath, JSON.stringify(jsonData, null, 2), 'utf-8');
-    console.log("Дані успішно записані у файл:", outputFilePath);
-
-} catch (error) {
-    console.error("Помилка парсингу JSON:", error.message);
-    process.exit(1);
-}
+  } catch (parseErr) {
+    console.error("Помилка при парсингу JSON:", parseErr);
+  }
+});
